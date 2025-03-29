@@ -9,13 +9,26 @@ import {
   getRedirectResult 
 } from "firebase/auth";
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+// Import local config directly (this will be excluded in production builds)
+import { firebaseLocalConfig } from './firebase.local';
+
+// Use local config if available and env vars are missing or empty
+const useLocalConfig = !import.meta.env.VITE_FIREBASE_API_KEY || 
+                       import.meta.env.VITE_FIREBASE_API_KEY === "undefined" ||
+                       import.meta.env.VITE_FIREBASE_API_KEY === "";
+
+const firebaseConfig = useLocalConfig
+  ? firebaseLocalConfig
+  : {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    };
+
+// For debugging - remove in production
+console.log('Using Firebase config from:', useLocalConfig ? 'local file' : 'environment variables');
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

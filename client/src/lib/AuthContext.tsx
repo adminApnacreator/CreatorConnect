@@ -3,6 +3,16 @@ import { User, onAuthStateChanged, AuthError } from "firebase/auth";
 import { auth, checkRedirectResult } from "./firebase";
 import { useToast } from "@/hooks/use-toast";
 
+// Create a custom event for auth state changes
+export const AUTH_STATE_CHANGED_EVENT = 'auth:stateChanged';
+export const AUTH_SUCCESS_EVENT = 'auth:loginSuccess';
+
+// Custom event emitter for auth events
+export const emitAuthEvent = (eventName: string, data?: any) => {
+  const event = new CustomEvent(eventName, { detail: data });
+  window.dispatchEvent(event);
+};
+
 interface AuthContextType {
   currentUser: User | null;
   isLoading: boolean;
@@ -44,6 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             title: "Welcome!",
             description: `You've successfully signed in with ${formattedProvider}`,
           });
+          
+          // Emit auth success event
+          emitAuthEvent(AUTH_SUCCESS_EVENT, { user });
         }
       } catch (error) {
         console.error("Error handling redirect result:", error);
@@ -67,10 +80,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Set up auth state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const previousUser = currentUser;
       setCurrentUser(user);
+      
       if (user) {
         setProviderData(user.providerData);
+        
+        // If user was previously null and now we have a user, it's a sign-in
+        if (!previousUser) {
+          emitAuthEvent(AUTH_SUCCESS_EVENT, { user });
+        }
       }
+      
+      // Always emit state changed event
+      emitAuthEvent(AUTH_STATE_CHANGED_EVENT, { user });
+      
       setIsLoading(false);
     }, (error) => {
       console.error("Auth state changed error:", error);

@@ -8,6 +8,7 @@ import {
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { FaGoogle, FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
+import { emitAuthEvent, AUTH_SUCCESS_EVENT } from "@/lib/AuthContext";
 
 interface LoginButtonProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
@@ -33,7 +34,11 @@ export default function LoginButton({
   const handleGoogleLogin = async () => {
     setIsLoading({ ...isLoading, google: true });
     try {
-      await signInWithGoogle();
+      const user = await signInWithGoogle();
+      // If we got a user via popup, emit the auth success event
+      if (user) {
+        emitAuthEvent(AUTH_SUCCESS_EVENT, { user });
+      }
       // For redirect auth on mobile, the page will refresh so this may not execute
       toast({
         title: "Success!",
@@ -54,7 +59,11 @@ export default function LoginButton({
   const handleFacebookLogin = async () => {
     setIsLoading({ ...isLoading, facebook: true });
     try {
-      await signInWithFacebook();
+      const user = await signInWithFacebook();
+      // If we got a user via popup, emit the auth success event
+      if (user) {
+        emitAuthEvent(AUTH_SUCCESS_EVENT, { user });
+      }
       // For redirect auth on mobile, the page will refresh so this may not execute
       toast({
         title: "Success!",
@@ -75,7 +84,11 @@ export default function LoginButton({
   const handleInstagramLogin = async () => {
     setIsLoading({ ...isLoading, instagram: true });
     try {
-      await signInWithInstagram();
+      const user = await signInWithInstagram();
+      // If we got a user via popup, emit the auth success event
+      if (user) {
+        emitAuthEvent(AUTH_SUCCESS_EVENT, { user });
+      }
       // For redirect auth on mobile, the page will refresh so this may not execute
       toast({
         title: "Success!",
@@ -96,7 +109,11 @@ export default function LoginButton({
   const handleLinkedInLogin = async () => {
     setIsLoading({ ...isLoading, linkedin: true });
     try {
-      await signInWithLinkedIn();
+      const user = await signInWithLinkedIn();
+      // If we got a user via popup, emit the auth success event
+      if (user) {
+        emitAuthEvent(AUTH_SUCCESS_EVENT, { user });
+      }
       // For redirect auth on mobile, the page will refresh so this may not execute
       toast({
         title: "Success!",

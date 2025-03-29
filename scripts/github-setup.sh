@@ -36,6 +36,8 @@ else
     echo -e "${YELLOW}Git repository already initialized${NC}"
 fi
 
+
+
 # Add all files to Git
 echo -e "${YELLOW}Adding files to Git...${NC}"
 git add .

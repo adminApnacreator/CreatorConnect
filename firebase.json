@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "apna-creator",
     "public": "dist",
     "ignore": [
       "firebase.json",

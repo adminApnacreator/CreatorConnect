@@ -11,8 +11,13 @@ export const creators = pgTable("creators", {
   password: text("password").notNull(),
   bio: text("bio"),
   avatar: text("avatar"),
-  platform: text("platform").notNull(), // instagram, youtube, etc
+  primaryPlatform: text("primary_platform").notNull(), // instagram, youtube, etc
+  otherPlatforms: text("other_platforms"), // comma-separated list of other platforms
   followers: integer("followers"),
+  engagementRate: integer("engagement_rate"), // stored as percentage value (e.g. 5 = 5%)
+  location: text("location"),
+  languages: text("languages"), // comma-separated list of languages e.g. "English (Native), Hindi (Fluent)"
+  contentCategories: text("content_categories"), // comma-separated list of categories
   verified: boolean("verified").default(false),
 });
 
@@ -21,8 +26,12 @@ export const services = pgTable("services", {
   id: serial("id").primaryKey(),
   creatorId: integer("creator_id").notNull(),
   title: text("title").notNull(),
-  description: text("description").notNull(),
-  price: integer("price").notNull(), // in rupees
+  shortDescription: text("short_description").notNull(),
+  longDescription: text("long_description").notNull(),
+  price: integer("price").notNull(), // in cents/paise
+  deliveryDays: integer("delivery_days").notNull(),
+  revisions: integer("revisions").default(1),
+  deliverables: text("deliverables").notNull(), // comma-separated list of deliverables
 });
 
 // Testimonial model

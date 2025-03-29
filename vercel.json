@@ -1,20 +1,33 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api"
+    "version": 2,
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist",
+    "framework": "vite",
+    "rewrites": [
+      {
+        "source": "/api/(.*)",
+        "destination": "/api"
+      },
+      {
+        "source": "/(.*)",
+        "destination": "/"
+      }
+    ],
+    "functions": {
+      "api/*.ts": {
+        "memory": 1024,
+        "maxDuration": 10,
+        "runtime": "@vercel/node@3.0.0"
+      }
     },
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
-  ],
-  "functions": {
-    "api/**": {
-      "runtime": "@vercel/node"
+    "routes": [
+      { "src": "/api/.*", "dest": "/api/routes.ts" },
+      { "handle": "filesystem" },
+      { "src": "/.*", "dest": "/index.html" }
+    ],
+    "build": {
+      "env": {
+        "NODE_ENV": "production"
+      }
     }
   }
-}

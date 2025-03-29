@@ -1,5 +1,5 @@
 {
   "projects": {
-    "default": "apnacreator"
+    "default": "${VITE_FIREBASE_PROJECT_ID}"
   }
 }

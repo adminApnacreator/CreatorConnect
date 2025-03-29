@@ -161,7 +161,7 @@ app.use(express.json());
 
 // Routes
 app.get('/api/creators', (req, res) => {
-  res.json(storage.getAllCreators());
+  return res.json(storage.getAllCreators());
 });
 
 app.get('/api/creators/:id', (req, res) => {
@@ -170,31 +170,31 @@ app.get('/api/creators/:id', (req, res) => {
   if (!creator) {
     return res.status(404).json({ error: 'Creator not found' });
   }
-  res.json(creator);
+  return res.json(creator);
 });
 
 app.get('/api/creators/:id/services', (req, res) => {
   const creatorId = parseInt(req.params.id);
-  res.json(storage.getServices(creatorId));
+  return res.json(storage.getServices(creatorId));
 });
 
 app.get('/api/testimonials', (req, res) => {
-  res.json(storage.getAllTestimonials());
+  return res.json(storage.getAllTestimonials());
 });
 
 app.post('/api/contact', (req, res) => {
   try {
     const message = storage.createContactMessage(req.body);
-    res.status(201).json(message);
+    return res.status(201).json(message);
   } catch (error) {
-    res.status(400).json({ error: 'Invalid request data' });
+    return res.status(400).json({ error: 'Invalid request data' });
   }
 });
 
 // Error handling
 app.use((err: any, req: any, res: any, next: any) => {
   console.error(err);
-  res.status(500).json({ error: 'Internal server error' });
+  return res.status(500).json({ error: 'Internal server error' });
 });
 
 // Export the Express app as a Firebase Function

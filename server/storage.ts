@@ -93,7 +93,19 @@ export class MemStorage implements IStorage {
 
   async createCreator(insertCreator: InsertCreator): Promise<Creator> {
     const id = this.creatorCurrentId++;
-    const creator: Creator = { ...insertCreator, id };
+    const creator: Creator = {
+      ...insertCreator,
+      id,
+      bio: insertCreator.bio ?? null,
+      avatar: insertCreator.avatar ?? null,
+      otherPlatforms: insertCreator.otherPlatforms ?? null,
+      followers: insertCreator.followers ?? null,
+      engagementRate: insertCreator.engagementRate ?? null,
+      location: insertCreator.location ?? null,
+      languages: insertCreator.languages ?? null,
+      contentCategories: insertCreator.contentCategories ?? null,
+      verified: insertCreator.verified ?? null
+    };
     this.creators.set(id, creator);
     return creator;
   }
@@ -107,7 +119,11 @@ export class MemStorage implements IStorage {
 
   async createService(insertService: InsertService): Promise<Service> {
     const id = this.serviceCurrentId++;
-    const service: Service = { ...insertService, id };
+    const service: Service = {
+      ...insertService,
+      id,
+      revisions: insertService.revisions ?? null
+    };
     this.services.set(id, service);
     return service;
   }
@@ -119,7 +135,12 @@ export class MemStorage implements IStorage {
 
   async createTestimonial(insertTestimonial: InsertTestimonial): Promise<Testimonial> {
     const id = this.testimonialCurrentId++;
-    const testimonial: Testimonial = { ...insertTestimonial, id };
+    const testimonial: Testimonial = {
+      ...insertTestimonial,
+      id,
+      avatar: insertTestimonial.avatar ?? null,
+      followers: insertTestimonial.followers ?? null
+    };
     this.testimonials.set(id, testimonial);
     return testimonial;
   }
@@ -142,7 +163,9 @@ export class MemStorage implements IStorage {
       conversation => conversation.creator1Id === creatorId || conversation.creator2Id === creatorId
     ).sort((a, b) => {
       // Sort conversations by most recent message
-      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+      const bTime = b.lastMessageAt?.getTime() ?? 0;
+      const aTime = a.lastMessageAt?.getTime() ?? 0;
+      return bTime - aTime;
     });
   }
 
@@ -192,7 +215,11 @@ export class MemStorage implements IStorage {
   async getMessagesByConversation(conversationId: number): Promise<Message[]> {
     return Array.from(this.messages.values())
       .filter(message => message.conversationId === conversationId)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      .sort((a, b) => {
+        const aTime = a.createdAt?.getTime() ?? 0;
+        const bTime = b.createdAt?.getTime() ?? 0;
+        return aTime - bTime;
+      });
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
@@ -447,7 +474,11 @@ export class MemStorage implements IStorage {
     // Create sample services
     services.forEach(service => {
       const id = this.serviceCurrentId++;
-      this.services.set(id, { ...service, id });
+      this.services.set(id, {
+        ...service,
+        id,
+        revisions: service.revisions ?? null
+      });
     });
 
     // Sample testimonials
@@ -481,7 +512,12 @@ export class MemStorage implements IStorage {
     // Create sample testimonials
     testimonials.forEach(testimonial => {
       const id = this.testimonialCurrentId++;
-      this.testimonials.set(id, { ...testimonial, id });
+      this.testimonials.set(id, {
+        ...testimonial,
+        id,
+        avatar: testimonial.avatar ?? null,
+        followers: testimonial.followers ?? null
+      });
     });
 
     // Add sample conversations and messages

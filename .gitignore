@@ -1,33 +1,64 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Dependency directories
+node_modules/
+jspm_packages/
+functions/node_modules/
 
-node_modules
-dist
-dist-ssr
-*.local
+# Build outputs
+dist/
+build/
+functions/lib/
+*.tsbuildinfo
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Firebase
 .firebase/
-functions/lib/
+firebase-debug.log
+ui-debug.log
+.runtimeconfig.json
 
-# Environment
-.env*
-!.env.example
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.replit
+*.sublime*
+.project
+.classpath
+.settings/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Replit
+.upm/
+.config/
+.replitignore
+
+# Temporary files
+*.tmp
+*.bak

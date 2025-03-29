@@ -1,129 +1,135 @@
-# ApnaCreator - Creator Economy Platform
+# ApnaCreator Platform
 
-ApnaCreator is a comprehensive platform that connects content creators across multiple social media platforms (YouTube, Facebook, Instagram, LinkedIn) with brands for collaboration opportunities and monetization through 1:1 services.
+A comprehensive creator economy platform that seamlessly connects content creators with brands and peers, enabling monetization and professional networking.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Development](#development)
+- [Deployment](#deployment)
+- [GitHub Integration](#github-integration)
+- [Custom Domain Setup](#custom-domain-setup)
+- [Firebase Configuration](#firebase-configuration)
+
+## Overview
+
+ApnaCreator is a platform designed for content creators across multiple platforms (YouTube, Facebook, Instagram, LinkedIn). It facilitates brand collaborations, monetization through 1:1 services, and cross-promotion between creators.
 
 ## Features
 
-- **Social Authentication**: Sign in with Google, Facebook, Instagram, and LinkedIn.
-- **Creator Profiles**: Detailed creator profiles showcasing their services, earnings, and analytics.
-- **Service Marketplace**: Creators can offer their services with detailed pricing and deliverables.
-- **Earnings Dashboard**: Track earnings and upcoming tasks on a comprehensive dashboard.
-- **Brand Discovery**: Brands can discover and connect with creators for collaboration.
-- **Responsive Design**: Beautiful and responsive UI with gradient style colors.
-
-## Tech Stack
-
-- **Frontend**: React with TypeScript, Tailwind CSS, shadcn UI components
-- **State Management**: TanStack React Query for data fetching
-- **Authentication**: Firebase Authentication
-- **Backend**: Express.js
-- **Database**: In-memory storage (can be connected to PostgreSQL)
-- **Hosting**: Firebase Hosting
-- **Functions**: Firebase Cloud Functions
+- **Authentication**: Social login with Google, Facebook, Instagram, and LinkedIn
+- **Creator Profiles**: Showcase your content, followers, and engagement metrics
+- **Service Marketplace**: Offer and purchase creator services with secure payment processing
+- **Analytics Dashboard**: Track earnings, growth, and engagement over time
+- **Task Management**: Manage client requests and ongoing projects
+- **Responsive Design**: Works seamlessly on mobile, tablet, and desktop
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
-- Firebase project
+- Node.js 18+ installed
+- Firebase account
+- GitHub account (for deployment)
 
 ### Installation
 
 1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/apnacreator.git
-cd apnacreator
-```
+   ```bash
+   git clone https://github.com/yourusername/apnacreator.git
+   cd apnacreator
+   ```
 
 2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
-```
-
-3. Set up environment variables:
-
-Create a `.env` file in the root directory with the following variables:
-
-```
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
-VITE_FIREBASE_APP_ID=your_firebase_app_id
-```
+3. Configure Firebase:
+   - Set up your Firebase project in the [Firebase Console](https://console.firebase.google.com/)
+   - Enable Authentication with social providers
+   - Copy the configuration values to your environment (.env) file:
+     ```
+     VITE_FIREBASE_API_KEY=your-api-key
+     VITE_FIREBASE_PROJECT_ID=your-project-id
+     VITE_FIREBASE_APP_ID=your-app-id
+     ```
 
 4. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm run dev
-```
+## Development
+
+The project structure follows a client-server architecture:
+
+- `client/`: React frontend with TypeScript
+- `server/`: Express backend API
+- `shared/`: Shared types and utilities
+- `functions/`: Firebase Cloud Functions
+
+### Key Technologies
+
+- **Frontend**: React, TypeScript, TanStack Query, Tailwind CSS, shadcn/ui
+- **Backend**: Express, Drizzle ORM
+- **Authentication**: Firebase Authentication
+- **Deployment**: Firebase Hosting, GitHub Actions
 
 ## Deployment
 
-See the detailed [Deployment Guide](DEPLOYMENT.md) for instructions on deploying to Firebase Hosting with a custom domain.
+### Automatic Deployment with GitHub Actions
 
-### Deploying to apnacreator.com
+Once set up with GitHub, the project will automatically deploy to Firebase Hosting when you push to the main branch. See the [GitHub Integration](#github-integration) section for details.
 
-This project is configured to be deployed to the custom domain apnacreator.com. Here are the steps to set this up:
+### Manual Deployment
 
-1. Run the environment setup script to configure your Firebase project:
-   ```bash
-   ./scripts/setup-env.sh
-   ```
+To deploy manually:
 
-2. Set up your custom domain in Firebase Hosting:
-   ```bash
-   ./scripts/add-custom-domain.sh apnacreator.com
-   ```
+```bash
+npm run build
+firebase deploy
+```
 
-3. Follow the instructions in the Firebase Console to verify domain ownership and configure DNS settings.
+## GitHub Integration
 
-4. Deploy the application:
-   ```bash
-   ./scripts/deploy.sh
-   ```
+We've provided scripts to help you set up GitHub integration with continuous deployment.
 
-### Continuous Integration/Continuous Deployment
+### Option 1: Using Username/Password
 
-This project includes GitHub Actions workflows for automatic deployment. To set up CI/CD:
+```bash
+./scripts/github-setup.sh <github_username> <repository_name>
+```
 
-1. Run the CI setup script to generate a Firebase token:
-   ```bash
-   ./scripts/setup-ci.sh
-   ```
+### Option 2: Using Personal Access Token (Recommended)
 
-2. Add the token to your GitHub repository secrets (follow the instructions provided by the script).
+```bash
+./scripts/github-token-push.sh <github_username> <repository_name> <personal_access_token>
+```
 
-3. Push changes to the main branch to trigger automatic deployment.
+After running either script, follow the instructions in the [GITHUB_SETUP.md](GITHUB_SETUP.md) file to complete the setup.
 
-## Project Structure
+## Custom Domain Setup
 
-- `/client` - React frontend code
-  - `/src/components` - UI components
-  - `/src/pages` - Page components
-  - `/src/lib` - Utility functions and Firebase setup
-  - `/src/hooks` - Custom React hooks
-- `/server` - Express backend code
-  - `routes.ts` - API routes
-  - `storage.ts` - Data storage interface
-- `/functions` - Firebase Cloud Functions
-- `/shared` - Shared types and schemas
+To connect your custom domain (e.g., apnacreator.com) to your Firebase hosting:
 
-## Contributing
+```bash
+./scripts/add-custom-domain.sh <domain> <firebase_project_id>
+```
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+For example:
+```bash
+./scripts/add-custom-domain.sh apnacreator.com my-firebase-project
+```
 
-## License
+The script will guide you through the DNS configuration process.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Firebase Configuration
 
-## Acknowledgments
+For detailed instructions on setting up Firebase for this project, see the following resources:
 
-- All the amazing creators who inspired this platform
-- The open source community for the incredible tools and libraries
+- [Firebase Authentication Setup](https://firebase.google.com/docs/auth)
+- [Firebase Hosting Configuration](https://firebase.google.com/docs/hosting)
+- [Firebase Custom Domain Setup](https://firebase.google.com/docs/hosting/custom-domain)

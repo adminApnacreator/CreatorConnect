@@ -7,57 +7,59 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}Starting deployment process for ApnaCreator...${NC}"
+echo -e "${YELLOW}Deploying ApnaCreator to Firebase...${NC}"
 
-# Check if environment variables are set
-if [ -z "$VITE_FIREBASE_API_KEY" ] || [ -z "$VITE_FIREBASE_PROJECT_ID" ] || [ -z "$VITE_FIREBASE_APP_ID" ]; then
-  echo -e "${RED}Error: Required environment variables are not set${NC}"
-  echo "Please make sure the following environment variables are set:"
-  echo "- VITE_FIREBASE_API_KEY"
-  echo "- VITE_FIREBASE_PROJECT_ID"
-  echo "- VITE_FIREBASE_APP_ID"
-  exit 1
+# Check if firebase-tools is installed
+if ! command -v firebase &> /dev/null; then
+    echo -e "${YELLOW}Firebase CLI is not installed. Installing...${NC}"
+    npm install -g firebase-tools
 fi
 
-# Build frontend
-echo -e "${YELLOW}Building frontend...${NC}"
+# Check if project is specified
+if [ -z "$1" ]; then
+    echo -e "${RED}Error: Firebase project ID is required${NC}"
+    echo "Usage: ./scripts/deploy.sh <firebase_project_id>"
+    echo "Example: ./scripts/deploy.sh my-firebase-project"
+    exit 1
+fi
+
+PROJECT_ID=$1
+
+# Login to Firebase
+echo -e "${YELLOW}Logging in to Firebase (you may need to open a browser)...${NC}"
+firebase login
+
+# Build the project
+echo -e "${YELLOW}Building the project...${NC}"
 npm run build
-if [ $? -ne 0 ]; then
-  echo -e "${RED}Frontend build failed!${NC}"
-  exit 1
-fi
-echo -e "${GREEN}Frontend build successful${NC}"
 
-# Build functions
-echo -e "${YELLOW}Building functions...${NC}"
-cd functions
-npm install
-npm run build
+# Check if build was successful
 if [ $? -ne 0 ]; then
-  echo -e "${RED}Functions build failed!${NC}"
-  exit 1
+    echo -e "${RED}Build failed. Please fix the errors and try again.${NC}"
+    exit 1
 fi
-cd ..
-echo -e "${GREEN}Functions build successful${NC}"
+
+# Initialize Firebase if firebase.json doesn't exist
+if [ ! -f "firebase.json" ]; then
+    echo -e "${YELLOW}Initializing Firebase...${NC}"
+    echo -e "${YELLOW}Please select Hosting when prompted${NC}"
+    echo -e "${YELLOW}Set 'dist' as your public directory${NC}"
+    echo -e "${YELLOW}Configure as a single-page app: Yes${NC}"
+    firebase init --project $PROJECT_ID
+fi
 
 # Deploy to Firebase
 echo -e "${YELLOW}Deploying to Firebase...${NC}"
-firebase deploy
+firebase deploy --project $PROJECT_ID
 
-if [ $? -ne 0 ]; then
-  echo -e "${RED}Deployment failed!${NC}"
-  exit 1
+# Check if deploy was successful
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}Deployment successful!${NC}"
+    echo -e "${GREEN}Your app is now live at:${NC}"
+    echo -e "${GREEN}https://$PROJECT_ID.web.app${NC}"
+    echo ""
+    echo -e "${YELLOW}To set up a custom domain, run:${NC}"
+    echo "./scripts/add-custom-domain.sh your-domain.com $PROJECT_ID"
+else
+    echo -e "${RED}Deployment failed. Please check the error message above.${NC}"
 fi
-
-echo -e "${GREEN}Deployment successful!${NC}"
-echo -e "${YELLOW}Your application is now live at:${NC} https://${VITE_FIREBASE_PROJECT_ID}.web.app"
-
-# Check if custom domain is configured
-CUSTOM_DOMAIN=$(grep -o '"site": "[^"]*"' firebase.json | cut -d'"' -f4)
-if [ ! -z "$CUSTOM_DOMAIN" ]; then
-  echo -e "Custom domain: https://$CUSTOM_DOMAIN"
-fi
-
-echo ""
-echo -e "${YELLOW}To add a custom domain, run:${NC}"
-echo "./scripts/add-custom-domain.sh your-domain.com"

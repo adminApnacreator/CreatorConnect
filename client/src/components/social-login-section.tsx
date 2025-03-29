@@ -1,55 +1,52 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FaGoogle, FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import LoginButton from "@/components/login-button";
 import LogoutButton from "@/components/logout-button";
-import { signInWithInstagram, signInWithLinkedIn } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  FaGoogle, 
+  FaFacebook, 
+  FaInstagram, 
+  FaLinkedin,
+  FaTwitter,
+  FaGithub,
+  FaMicrosoft,
+  FaApple,
+  FaUserCircle
+} from "react-icons/fa";
 
 export default function SocialLoginSection() {
-  const { currentUser } = useAuth();
+  const { currentUser, providerData } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState({
-    instagram: false,
-    linkedin: false
-  });
   const { toast } = useToast();
   
-  const handleInstagramLogin = async () => {
-    try {
-      setIsLoading(prev => ({ ...prev, instagram: true }));
-      await signInWithInstagram();
-      // Note: for redirect auth, the page will refresh so no need to handle success here
-    } catch (error) {
-      console.error("Instagram login error:", error);
-      toast({
-        title: "Login Failed",
-        description: "Could not log in with Instagram. Please try another method.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, instagram: false }));
-    }
+  // Helper function to get provider icon
+  const getProviderIcon = (providerId: string) => {
+    if (providerId.includes('google')) return <FaGoogle className="w-5 h-5 text-[#4285F4]" />;
+    if (providerId.includes('facebook')) return <FaFacebook className="w-5 h-5 text-[#1877F2]" />;
+    if (providerId.includes('instagram')) return <FaInstagram className="w-5 h-5 text-[#E1306C]" />;
+    if (providerId.includes('linkedin')) return <FaLinkedin className="w-5 h-5 text-[#0077B5]" />;
+    if (providerId.includes('twitter')) return <FaTwitter className="w-5 h-5 text-[#1DA1F2]" />;
+    if (providerId.includes('github')) return <FaGithub className="w-5 h-5 text-[#333]" />;
+    if (providerId.includes('microsoft')) return <FaMicrosoft className="w-5 h-5 text-[#00A4EF]" />;
+    if (providerId.includes('apple')) return <FaApple className="w-5 h-5 text-[#A2AAAD]" />;
+    return <FaUserCircle className="w-5 h-5 text-gray-500" />;
   };
   
-  const handleLinkedInLogin = async () => {
-    try {
-      setIsLoading(prev => ({ ...prev, linkedin: true }));
-      await signInWithLinkedIn();
-      // Note: for redirect auth, the page will refresh so no need to handle success here
-    } catch (error) {
-      console.error("LinkedIn login error:", error);
-      toast({
-        title: "Login Failed",
-        description: "Could not log in with LinkedIn. Please try another method.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(prev => ({ ...prev, linkedin: false }));
-    }
+  // Helper function to get formatted provider name
+  const getProviderName = (providerId: string): string => {
+    if (providerId.includes('google')) return 'Google';
+    if (providerId.includes('facebook')) return 'Facebook';
+    if (providerId.includes('instagram')) return 'Instagram';
+    if (providerId.includes('linkedin')) return 'LinkedIn';
+    if (providerId.includes('twitter')) return 'Twitter';
+    if (providerId.includes('github')) return 'GitHub';
+    if (providerId.includes('microsoft')) return 'Microsoft';
+    if (providerId.includes('apple')) return 'Apple';
+    return providerId.split('.')[0] || 'Unknown Provider';
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -85,48 +82,61 @@ export default function SocialLoginSection() {
             {currentUser ? (
               <div className="space-y-6 text-center">
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <img 
-                    src={currentUser.photoURL || "https://via.placeholder.com/100"} 
-                    alt="Profile" 
-                    className="w-20 h-20 rounded-full mx-auto mb-4"
-                  />
+                  <div className="relative w-20 h-20 mx-auto mb-4">
+                    <img 
+                      src={currentUser.photoURL || "https://via.placeholder.com/100"} 
+                      alt="Profile" 
+                      className="w-20 h-20 rounded-full object-cover"
+                    />
+                    
+                    {/* Provider badge */}
+                    {providerData && providerData.length > 0 && (
+                      <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-lg">
+                        {getProviderIcon(providerData[0]?.providerId || '')}
+                      </div>
+                    )}
+                  </div>
+                  
                   <h3 className="font-bold text-lg">{currentUser.displayName || "User"}</h3>
                   <p className="text-gray-500 text-sm">{currentUser.email}</p>
+                  
+                  {/* Provider info */}
+                  {providerData && providerData.length > 0 && (
+                    <div className="mt-1 text-xs text-gray-600 flex items-center justify-center gap-1">
+                      <span>
+                        Signed in with {getProviderName(providerData[0]?.providerId || '')}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Show verification info */}
+                  <div className="mt-2 text-xs text-gray-500 flex items-center justify-center gap-1">
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      viewBox="0 0 24 24" 
+                      fill="currentColor" 
+                      className="w-4 h-4 text-green-500"
+                    >
+                      <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+                    </svg>
+                    <span>
+                      {currentUser.emailVerified ? "Email verified" : "Email not verified"}
+                    </span>
+                  </div>
                 </div>
                 
                 <div>
                   <p className="text-green-600 font-medium mb-4">
                     You're successfully signed in!
                   </p>
-                  <LogoutButton className="w-full" />
+                  <LogoutButton className="w-full" showProviderName={true} />
                 </div>
               </div>
             ) : (
               <>
                 <div className="space-y-4">
-                  <LoginButton />
-                  
-                  <button 
-                    onClick={handleInstagramLogin}
-                    disabled={isLoading.instagram}
-                    className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition"
-                  >
-                    <FaInstagram className="text-pink-500 text-xl" />
-                    <span className="font-medium">
-                      {isLoading.instagram ? "Connecting..." : "Continue with Instagram"}
-                    </span>
-                  </button>
-                  
-                  <button 
-                    onClick={handleLinkedInLogin}
-                    disabled={isLoading.linkedin}
-                    className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition"
-                  >
-                    <FaLinkedin className="text-blue-600 text-xl" />
-                    <span className="font-medium">
-                      {isLoading.linkedin ? "Connecting..." : "Continue with LinkedIn"}
-                    </span>
-                  </button>
+                  {/* Use the enhanced LoginButton with all social login options */}
+                  <LoginButton showAll={true} />
                 </div>
                 
                 <div className="flex items-center my-6">

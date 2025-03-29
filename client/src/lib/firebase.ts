@@ -1,5 +1,13 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  FacebookAuthProvider, 
+  OAuthProvider,
+  signInWithPopup, 
+  signInWithRedirect, 
+  getRedirectResult 
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,21 +23,28 @@ const auth = getAuth(app);
 
 // Setup providers
 const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+
 const facebookProvider = new FacebookAuthProvider();
+facebookProvider.addScope('email');
+facebookProvider.addScope('public_profile');
 
-// Add custom OAuth providers for Instagram and LinkedIn
-const createCustomProvider = (providerId: string) => {
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({
-    // This tells Firebase Auth to specifically handle this as a custom provider
-    // In a real implementation, you would need to set up Firebase Auth custom domains
-    'login_hint': providerId 
-  });
-  return provider;
-};
+// Instagram auth is handled through Facebook in Firebase
+// This is because Instagram is owned by Meta (Facebook)
+const instagramProvider = new FacebookAuthProvider();
+instagramProvider.addScope('email');
+instagramProvider.addScope('public_profile');
+instagramProvider.setCustomParameters({
+  // This helps identify that the intent was to login with Instagram
+  'display': 'popup',
+  'auth_type': 'reauthenticate'
+});
 
-const instagramProvider = createCustomProvider('instagram.com');
-const linkedinProvider = createCustomProvider('linkedin.com');
+// LinkedIn provider using OAuthProvider
+const linkedinProvider = new OAuthProvider('linkedin.com');
+linkedinProvider.addScope('profile');
+linkedinProvider.addScope('email');
 
 // Check for redirect result on page load
 export const checkRedirectResult = async () => {

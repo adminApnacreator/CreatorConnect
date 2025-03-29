@@ -335,7 +335,19 @@ export class MemStorage implements IStorage {
     // Create sample creators
     creators.forEach(creator => {
       const id = this.creatorCurrentId++;
-      this.creators.set(id, { ...creator, id });
+      this.creators.set(id, {
+        ...creator,
+        id,
+        bio: creator.bio ?? null,
+        avatar: creator.avatar ?? null,
+        otherPlatforms: creator.otherPlatforms ?? null,
+        followers: creator.followers ?? null,
+        engagementRate: creator.engagementRate ?? null,
+        location: creator.location ?? null,
+        languages: creator.languages ?? null,
+        contentCategories: creator.contentCategories ?? null,
+        verified: creator.verified ?? null
+      });
     });
 
     // Add services for each creator

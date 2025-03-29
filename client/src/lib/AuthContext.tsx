@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase";
+import { auth, checkRedirectResult } from "./firebase";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -18,6 +18,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check for redirect result when the app loads
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        // Check if we have a redirect result
+        const user = await checkRedirectResult();
+        if (user) {
+          setCurrentUser(user);
+        }
+      } catch (error) {
+        console.error("Error handling redirect result:", error);
+      }
+    };
+
+    handleRedirectResult();
+  }, []);
+
+  // Set up auth state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);

@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -17,11 +17,47 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
 
+// Add custom OAuth providers for Instagram and LinkedIn
+const createCustomProvider = (providerId: string) => {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({
+    // This tells Firebase Auth to specifically handle this as a custom provider
+    // In a real implementation, you would need to set up Firebase Auth custom domains
+    'login_hint': providerId 
+  });
+  return provider;
+};
+
+const instagramProvider = createCustomProvider('instagram.com');
+const linkedinProvider = createCustomProvider('linkedin.com');
+
+// Check for redirect result on page load
+export const checkRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      console.log("Redirect sign-in successful");
+      return result.user;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting redirect result", error);
+    throw error;
+  }
+};
+
 // Sign in with Google
 export const signInWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    // Use redirect for better mobile experience
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      await signInWithRedirect(auth, googleProvider);
+      return null; // Will redirect, so no user to return immediately
+    } else {
+      // Use popup for desktop
+      const result = await signInWithPopup(auth, googleProvider);
+      return result.user;
+    }
   } catch (error) {
     console.error("Error signing in with Google", error);
     throw error;
@@ -31,10 +67,53 @@ export const signInWithGoogle = async () => {
 // Sign in with Facebook
 export const signInWithFacebook = async () => {
   try {
-    const result = await signInWithPopup(auth, facebookProvider);
-    return result.user;
+    // Use redirect for better mobile experience
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      await signInWithRedirect(auth, facebookProvider);
+      return null; // Will redirect, so no user to return immediately
+    } else {
+      // Use popup for desktop
+      const result = await signInWithPopup(auth, facebookProvider);
+      return result.user;
+    }
   } catch (error) {
     console.error("Error signing in with Facebook", error);
+    throw error;
+  }
+};
+
+// Sign in with Instagram (Note: This would require proper OAuth setup in Firebase)
+export const signInWithInstagram = async () => {
+  try {
+    // Use redirect for better mobile experience
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      await signInWithRedirect(auth, instagramProvider);
+      return null; // Will redirect, so no user to return immediately
+    } else {
+      // Use popup for desktop
+      const result = await signInWithPopup(auth, instagramProvider);
+      return result.user;
+    }
+  } catch (error) {
+    console.error("Error signing in with Instagram", error);
+    throw error;
+  }
+};
+
+// Sign in with LinkedIn (Note: This would require proper OAuth setup in Firebase)
+export const signInWithLinkedIn = async () => {
+  try {
+    // Use redirect for better mobile experience
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      await signInWithRedirect(auth, linkedinProvider);
+      return null; // Will redirect, so no user to return immediately
+    } else {
+      // Use popup for desktop
+      const result = await signInWithPopup(auth, linkedinProvider);
+      return result.user;
+    }
+  } catch (error) {
+    console.error("Error signing in with LinkedIn", error);
     throw error;
   }
 };

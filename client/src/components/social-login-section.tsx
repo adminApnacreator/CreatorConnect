@@ -5,11 +5,52 @@ import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import LoginButton from "@/components/login-button";
 import LogoutButton from "@/components/logout-button";
+import { signInWithInstagram, signInWithLinkedIn } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SocialLoginSection() {
   const { currentUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState({
+    instagram: false,
+    linkedin: false
+  });
+  const { toast } = useToast();
+  
+  const handleInstagramLogin = async () => {
+    try {
+      setIsLoading(prev => ({ ...prev, instagram: true }));
+      await signInWithInstagram();
+      // Note: for redirect auth, the page will refresh so no need to handle success here
+    } catch (error) {
+      console.error("Instagram login error:", error);
+      toast({
+        title: "Login Failed",
+        description: "Could not log in with Instagram. Please try another method.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, instagram: false }));
+    }
+  };
+  
+  const handleLinkedInLogin = async () => {
+    try {
+      setIsLoading(prev => ({ ...prev, linkedin: true }));
+      await signInWithLinkedIn();
+      // Note: for redirect auth, the page will refresh so no need to handle success here
+    } catch (error) {
+      console.error("LinkedIn login error:", error);
+      toast({
+        title: "Login Failed",
+        description: "Could not log in with LinkedIn. Please try another method.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(prev => ({ ...prev, linkedin: false }));
+    }
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,6 +59,13 @@ export default function SocialLoginSection() {
     // Clear form
     setEmail("");
     setPassword("");
+    
+    // Show a toast since this is just a mock implementation
+    toast({
+      title: "Email Login Coming Soon",
+      description: "Email/password authentication is not yet implemented.",
+      variant: "default"
+    });
   };
   
   return (
@@ -58,13 +106,26 @@ export default function SocialLoginSection() {
                 <div className="space-y-4">
                   <LoginButton />
                   
-                  <button className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition">
+                  <button 
+                    onClick={handleInstagramLogin}
+                    disabled={isLoading.instagram}
+                    className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition"
+                  >
                     <FaInstagram className="text-pink-500 text-xl" />
-                    <span className="font-medium">Continue with Instagram</span>
+                    <span className="font-medium">
+                      {isLoading.instagram ? "Connecting..." : "Continue with Instagram"}
+                    </span>
                   </button>
-                  <button className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition">
+                  
+                  <button 
+                    onClick={handleLinkedInLogin}
+                    disabled={isLoading.linkedin}
+                    className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition"
+                  >
                     <FaLinkedin className="text-blue-600 text-xl" />
-                    <span className="font-medium">Continue with LinkedIn</span>
+                    <span className="font-medium">
+                      {isLoading.linkedin ? "Connecting..." : "Continue with LinkedIn"}
+                    </span>
                   </button>
                 </div>
                 

@@ -4,9 +4,11 @@ import { storage } from "./storage";
 import { 
   insertContactMessageSchema, 
   insertServiceSchema,
-  insertCreatorSchema 
+  insertCreatorSchema,
+  insertMessageSchema,
+  insertConversationSchema
 } from "@shared/schema";
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -271,6 +273,242 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(tasksData);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  // Messaging endpoints
+  // Get all conversations for a creator
+  app.get("/api/creators/:id/conversations", async (req, res) => {
+    try {
+      const creatorId = parseInt(req.params.id);
+      if (isNaN(creatorId)) {
+        return res.status(400).json({ message: "Invalid creator ID" });
+      }
+
+      // Verify creator exists
+      const creator = await storage.getCreator(creatorId);
+      if (!creator) {
+        return res.status(404).json({ message: "Creator not found" });
+      }
+
+      const conversations = await storage.getConversationsByCreator(creatorId);
+      
+      // Enhance conversations with creator details
+      const enhancedConversations = await Promise.all(
+        conversations.map(async (conversation) => {
+          // Get the other creator's info (not the requesting creator)
+          const otherCreatorId = conversation.creator1Id === creatorId 
+            ? conversation.creator2Id 
+            : conversation.creator1Id;
+            
+          const otherCreator = await storage.getCreator(otherCreatorId);
+          
+          // Get unread message count for this creator in this conversation
+          const messages = await storage.getMessagesByConversation(conversation.id);
+          const unreadCount = messages.filter(msg => 
+            msg.receiverId === creatorId && !msg.read
+          ).length;
+          
+          // Get last message for preview
+          const lastMessage = messages.length > 0 
+            ? messages[messages.length - 1] 
+            : null;
+          
+          return {
+            ...conversation,
+            otherCreator: otherCreator ? {
+              id: otherCreator.id,
+              name: otherCreator.name,
+              username: otherCreator.username,
+              avatar: otherCreator.avatar,
+              primaryPlatform: otherCreator.primaryPlatform
+            } : null,
+            unreadCount,
+            lastMessage: lastMessage ? {
+              content: lastMessage.content.substring(0, 50) + (lastMessage.content.length > 50 ? '...' : ''),
+              createdAt: lastMessage.createdAt,
+              isFromOtherPerson: lastMessage.senderId === otherCreatorId
+            } : null
+          };
+        })
+      );
+      
+      res.json(enhancedConversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  // Get messages for a specific conversation
+  app.get("/api/conversations/:conversationId/messages", async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.conversationId);
+      if (isNaN(conversationId)) {
+        return res.status(400).json({ message: "Invalid conversation ID" });
+      }
+
+      const creatorId = parseInt(req.query.creatorId as string);
+      if (isNaN(creatorId)) {
+        return res.status(400).json({ message: "Creator ID is required as a query parameter" });
+      }
+
+      const conversation = await storage.getConversation(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+
+      // Verify that the requesting creator is part of this conversation
+      if (conversation.creator1Id !== creatorId && conversation.creator2Id !== creatorId) {
+        return res.status(403).json({ message: "Unauthorized: Creator is not part of this conversation" });
+      }
+
+      // Mark all messages where the requester is the recipient as read
+      await storage.markMessagesAsRead(conversationId, creatorId);
+
+      // Get the messages
+      const messages = await storage.getMessagesByConversation(conversationId);
+      
+      // Get the other creator in this conversation
+      const otherCreatorId = conversation.creator1Id === creatorId 
+        ? conversation.creator2Id 
+        : conversation.creator1Id;
+      
+      const otherCreator = await storage.getCreator(otherCreatorId);
+      
+      res.json({
+        messages,
+        conversation,
+        otherCreator: otherCreator ? {
+          id: otherCreator.id,
+          name: otherCreator.name,
+          username: otherCreator.username,
+          avatar: otherCreator.avatar,
+          primaryPlatform: otherCreator.primaryPlatform
+        } : null
+      });
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Get or create a conversation between two creators
+  app.post("/api/conversations", async (req, res) => {
+    try {
+      const schema = z.object({
+        creator1Id: z.number(),
+        creator2Id: z.number()
+      });
+
+      const { creator1Id, creator2Id } = schema.parse(req.body);
+      
+      // Verify both creators exist
+      const creator1 = await storage.getCreator(creator1Id);
+      const creator2 = await storage.getCreator(creator2Id);
+      
+      if (!creator1) {
+        return res.status(404).json({ message: "Creator 1 not found" });
+      }
+      
+      if (!creator2) {
+        return res.status(404).json({ message: "Creator 2 not found" });
+      }
+      
+      const conversation = await storage.getOrCreateConversation(creator1Id, creator2Id);
+      
+      // Also return the other creator's info
+      res.status(201).json({
+        conversation,
+        otherCreator: {
+          id: creator2.id,
+          name: creator2.name,
+          username: creator2.username,
+          avatar: creator2.avatar,
+          primaryPlatform: creator2.primaryPlatform
+        }
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  // Send a message in a conversation
+  app.post("/api/conversations/:conversationId/messages", async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.conversationId);
+      if (isNaN(conversationId)) {
+        return res.status(400).json({ message: "Invalid conversation ID" });
+      }
+
+      // First validate that the conversation exists
+      const conversation = await storage.getConversation(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+
+      // Validate the message data
+      const messageSchema = z.object({
+        senderId: z.number()
+          .refine(id => id === conversation.creator1Id || id === conversation.creator2Id, {
+            message: "Sender must be part of the conversation"
+          }),
+        content: z.string().min(1).max(2000),
+      });
+
+      const { senderId, content } = messageSchema.parse(req.body);
+      
+      // Determine the receiver automatically
+      const receiverId = senderId === conversation.creator1Id 
+        ? conversation.creator2Id 
+        : conversation.creator1Id;
+      
+      // Create the message
+      const message = await storage.createMessage({
+        conversationId,
+        senderId,
+        receiverId,
+        content
+      });
+      
+      // Update the conversation's last active timestamp
+      await storage.updateConversationLastActive(conversationId);
+      
+      res.status(201).json(message);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ message: validationError.message });
+      }
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // Get unread message count for a creator
+  app.get("/api/creators/:id/unread-count", async (req, res) => {
+    try {
+      const creatorId = parseInt(req.params.id);
+      if (isNaN(creatorId)) {
+        return res.status(400).json({ message: "Invalid creator ID" });
+      }
+
+      // Verify creator exists
+      const creator = await storage.getCreator(creatorId);
+      if (!creator) {
+        return res.status(404).json({ message: "Creator not found" });
+      }
+
+      const count = await storage.getUnreadMessageCount(creatorId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread message count" });
     }
   });
 

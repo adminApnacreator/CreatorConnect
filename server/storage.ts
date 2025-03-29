@@ -7,6 +7,10 @@ import {
   type InsertTestimonial,
   type ContactMessage,
   type InsertContactMessage,
+  type Conversation,
+  type InsertConversation,
+  type Message,
+  type InsertMessage,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -26,6 +30,18 @@ export interface IStorage {
 
   // Contact message methods
   createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
+  
+  // Conversation methods
+  getConversationsByCreator(creatorId: number): Promise<Conversation[]>;
+  getConversation(id: number): Promise<Conversation | undefined>;
+  getOrCreateConversation(creator1Id: number, creator2Id: number): Promise<Conversation>;
+  updateConversationLastActive(conversationId: number): Promise<Conversation | undefined>;
+  
+  // Message methods
+  getMessagesByConversation(conversationId: number): Promise<Message[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  markMessagesAsRead(conversationId: number, recipientId: number): Promise<void>;
+  getUnreadMessageCount(creatorId: number): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -33,20 +49,28 @@ export class MemStorage implements IStorage {
   private services: Map<number, Service>;
   private testimonials: Map<number, Testimonial>;
   private contactMessages: Map<number, ContactMessage>;
+  private conversations: Map<number, Conversation>;
+  private messages: Map<number, Message>;
   private creatorCurrentId: number;
   private serviceCurrentId: number;
   private testimonialCurrentId: number;
   private contactMessageCurrentId: number;
+  private conversationCurrentId: number;
+  private messageCurrentId: number;
 
   constructor() {
     this.creators = new Map();
     this.services = new Map();
     this.testimonials = new Map();
     this.contactMessages = new Map();
+    this.conversations = new Map();
+    this.messages = new Map();
     this.creatorCurrentId = 1;
     this.serviceCurrentId = 1;
     this.testimonialCurrentId = 1;
     this.contactMessageCurrentId = 1;
+    this.conversationCurrentId = 1;
+    this.messageCurrentId = 1;
 
     // Initialize with sample data
     this.initSampleData();
@@ -110,6 +134,100 @@ export class MemStorage implements IStorage {
     };
     this.contactMessages.set(id, contactMessage);
     return contactMessage;
+  }
+
+  // Conversation methods
+  async getConversationsByCreator(creatorId: number): Promise<Conversation[]> {
+    return Array.from(this.conversations.values()).filter(
+      conversation => conversation.creator1Id === creatorId || conversation.creator2Id === creatorId
+    ).sort((a, b) => {
+      // Sort conversations by most recent message
+      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+    });
+  }
+
+  async getConversation(id: number): Promise<Conversation | undefined> {
+    return this.conversations.get(id);
+  }
+
+  async getOrCreateConversation(creator1Id: number, creator2Id: number): Promise<Conversation> {
+    // Check if conversation already exists between these two creators
+    const existingConversation = Array.from(this.conversations.values()).find(
+      conversation => 
+        (conversation.creator1Id === creator1Id && conversation.creator2Id === creator2Id) ||
+        (conversation.creator1Id === creator2Id && conversation.creator2Id === creator1Id)
+    );
+
+    if (existingConversation) {
+      return existingConversation;
+    }
+
+    // Create a new conversation if one doesn't exist
+    const id = this.conversationCurrentId++;
+    const now = new Date();
+    const conversation: Conversation = {
+      id,
+      creator1Id,
+      creator2Id,
+      lastMessageAt: now,
+      createdAt: now
+    };
+    this.conversations.set(id, conversation);
+    return conversation;
+  }
+
+  async updateConversationLastActive(conversationId: number): Promise<Conversation | undefined> {
+    const conversation = this.conversations.get(conversationId);
+    if (!conversation) return undefined;
+
+    const updatedConversation = {
+      ...conversation,
+      lastMessageAt: new Date()
+    };
+    this.conversations.set(conversationId, updatedConversation);
+    return updatedConversation;
+  }
+
+  // Message methods
+  async getMessagesByConversation(conversationId: number): Promise<Message[]> {
+    return Array.from(this.messages.values())
+      .filter(message => message.conversationId === conversationId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }
+
+  async createMessage(insertMessage: InsertMessage): Promise<Message> {
+    const id = this.messageCurrentId++;
+    const message: Message = {
+      ...insertMessage,
+      id,
+      read: false,
+      createdAt: new Date()
+    };
+    this.messages.set(id, message);
+    
+    // Update the conversation's last active timestamp
+    await this.updateConversationLastActive(insertMessage.conversationId);
+    
+    return message;
+  }
+
+  async markMessagesAsRead(conversationId: number, recipientId: number): Promise<void> {
+    Array.from(this.messages.values())
+      .filter(message => 
+        message.conversationId === conversationId && 
+        message.receiverId === recipientId &&
+        !message.read
+      )
+      .forEach(message => {
+        const updatedMessage = { ...message, read: true };
+        this.messages.set(message.id, updatedMessage);
+      });
+  }
+
+  async getUnreadMessageCount(creatorId: number): Promise<number> {
+    return Array.from(this.messages.values())
+      .filter(message => message.receiverId === creatorId && !message.read)
+      .length;
   }
 
   // Initialize sample data
@@ -352,6 +470,118 @@ export class MemStorage implements IStorage {
     testimonials.forEach(testimonial => {
       const id = this.testimonialCurrentId++;
       this.testimonials.set(id, { ...testimonial, id });
+    });
+
+    // Add sample conversations and messages
+    // Conversation between Priya and Rahul
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+
+    // Conversation 1: Priya (1) and Rahul (2)
+    const conversation1: Conversation = {
+      id: this.conversationCurrentId++,
+      creator1Id: 1, // Priya
+      creator2Id: 2, // Rahul
+      lastMessageAt: now,
+      createdAt: threeDaysAgo
+    };
+    this.conversations.set(conversation1.id, conversation1);
+
+    // Conversation 2: Priya (1) and Arjun (3)
+    const conversation2: Conversation = {
+      id: this.conversationCurrentId++,
+      creator1Id: 1, // Priya
+      creator2Id: 3, // Arjun
+      lastMessageAt: twoHoursAgo,
+      createdAt: threeDaysAgo
+    };
+    this.conversations.set(conversation2.id, conversation2);
+
+    // Add messages to conversation 1
+    const messages1: Message[] = [
+      {
+        id: this.messageCurrentId++,
+        conversationId: conversation1.id,
+        senderId: 1, // Priya
+        receiverId: 2, // Rahul
+        content: "Hi Rahul, I was wondering if you'd be interested in collaborating on a wellness tech series?",
+        read: true,
+        createdAt: threeDaysAgo
+      },
+      {
+        id: this.messageCurrentId++,
+        conversationId: conversation1.id,
+        senderId: 2, // Rahul
+        receiverId: 1, // Priya
+        content: "Hi Priya! That sounds interesting. What kind of collaboration did you have in mind?",
+        read: true,
+        createdAt: new Date(threeDaysAgo.getTime() + 30 * 60 * 1000) // 30 minutes later
+      },
+      {
+        id: this.messageCurrentId++,
+        conversationId: conversation1.id,
+        senderId: 1, // Priya
+        receiverId: 2, // Rahul
+        content: "I'm thinking of a series on how technology can help with wellness tracking and mental health. Your tech expertise combined with my wellness focus could make great content.",
+        read: true,
+        createdAt: twoHoursAgo
+      },
+      {
+        id: this.messageCurrentId++,
+        conversationId: conversation1.id,
+        senderId: 2, // Rahul
+        receiverId: 1, // Priya
+        content: "That's a great idea! I've been exploring some AI-powered wellness apps recently that could be perfect for this. When would you like to start?",
+        read: true,
+        createdAt: oneHourAgo
+      },
+      {
+        id: this.messageCurrentId++,
+        conversationId: conversation1.id,
+        senderId: 1, // Priya
+        receiverId: 2, // Rahul
+        content: "How about next week? We could do a planning session on Monday and maybe film the first episode on Thursday?",
+        read: false, // Unread message
+        createdAt: now
+      }
+    ];
+
+    // Add messages to conversation 2
+    const messages2: Message[] = [
+      {
+        id: this.messageCurrentId++,
+        conversationId: conversation2.id,
+        senderId: 3, // Arjun
+        receiverId: 1, // Priya
+        content: "Hey Priya, I loved your recent wellness retreat vlog. The location looked amazing!",
+        read: true,
+        createdAt: threeDaysAgo
+      },
+      {
+        id: this.messageCurrentId++,
+        conversationId: conversation2.id,
+        senderId: 1, // Priya
+        receiverId: 3, // Arjun
+        content: "Thanks Arjun! It was in the hills near Rishikesh. I'd be happy to connect you with the property owner if you're interested in featuring it.",
+        read: true,
+        createdAt: new Date(threeDaysAgo.getTime() + 2 * 60 * 60 * 1000) // 2 hours later
+      },
+      {
+        id: this.messageCurrentId++,
+        conversationId: conversation2.id,
+        senderId: 3, // Arjun
+        receiverId: 1, // Priya
+        content: "That would be incredible! I'm planning a wellness travel series and that location would be perfect.",
+        read: true,
+        createdAt: twoHoursAgo
+      }
+    ];
+
+    // Store all messages
+    [...messages1, ...messages2].forEach(message => {
+      this.messages.set(message.id, message);
     });
   }
 }

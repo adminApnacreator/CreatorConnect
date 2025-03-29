@@ -55,11 +55,33 @@ export const contactMessages = pgTable("contact_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Conversation model for creator-to-creator messaging
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  creator1Id: integer("creator1_id").notNull(), // First participant
+  creator2Id: integer("creator2_id").notNull(), // Second participant
+  lastMessageAt: timestamp("last_message_at").defaultNow(), // For sorting conversations
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Message model for individual messages in conversations
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull(), // Reference to conversation
+  senderId: integer("sender_id").notNull(), // Creator who sent the message
+  receiverId: integer("receiver_id").notNull(), // Creator who receives the message
+  content: text("content").notNull(),
+  read: boolean("read").default(false), // Track if message has been read
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertCreatorSchema = createInsertSchema(creators).omit({ id: true });
 export const insertServiceSchema = createInsertSchema(services).omit({ id: true });
 export const insertTestimonialSchema = createInsertSchema(testimonials).omit({ id: true });
 export const insertContactMessageSchema = createInsertSchema(contactMessages).omit({ id: true, createdAt: true });
+export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, lastMessageAt: true, createdAt: true });
+export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, read: true, createdAt: true });
 
 // Types
 export type InsertCreator = z.infer<typeof insertCreatorSchema>;
@@ -73,3 +95,9 @@ export type Testimonial = typeof testimonials.$inferSelect;
 
 export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
 export type ContactMessage = typeof contactMessages.$inferSelect;
+
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;

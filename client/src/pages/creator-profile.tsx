@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +66,7 @@ export default function CreatorProfile() {
   const creatorId = parseInt(id || "1");
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("services");
+  const [, setLocation] = useLocation();
   const isCreatorProfile = true; // This would be determined by comparing the current user ID with the profile ID
 
   // Fetch creator data
@@ -126,7 +127,7 @@ export default function CreatorProfile() {
       <div className="container mx-auto py-20 text-center">
         <h2 className="text-2xl font-bold mb-4">Creator not found</h2>
         <p className="text-gray-600 mb-8">The creator profile you're looking for doesn't exist or has been removed.</p>
-        <Button href="/" variant="default">Back to Home</Button>
+        <Button onClick={() => setLocation("/")} variant="default">Back to Home</Button>
       </div>
     );
   }
@@ -161,7 +162,11 @@ export default function CreatorProfile() {
             </div>
             <div className="flex gap-2 mt-4 md:mt-0">
               {!isCreatorProfile && (
-                <Button variant="default" className="bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:from-[#0072FF] hover:to-[#00C6FF]">
+                <Button 
+                  variant="default" 
+                  className="bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:from-[#0072FF] hover:to-[#00C6FF]"
+                  onClick={() => setLocation(`/conversation/new/${creatorId}`)}
+                >
                   <MessageSquare className="mr-2 h-4 w-4" /> Message
                 </Button>
               )}
@@ -340,7 +345,6 @@ export default function CreatorProfile() {
                       </Card>
                     </div>
                   )}
-                  </div>
                 </div>
               ) : (
                 <div className="text-center py-20 bg-white rounded-lg shadow-sm">

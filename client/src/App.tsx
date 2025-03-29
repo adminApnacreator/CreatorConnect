@@ -1,9 +1,8 @@
+import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import { useAuth } from "@/lib/AuthContext";
 
 function Router() {
   return (
@@ -16,12 +15,21 @@ function Router() {
 }
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
-    </QueryClientProvider>
-  );
+  const { currentUser, isLoading } = useAuth();
+  
+  // Log authentication state changes
+  useEffect(() => {
+    if (!isLoading) {
+      console.log("Authentication state:", currentUser ? "Logged in" : "Logged out");
+    }
+  }, [currentUser, isLoading]);
+
+  if (isLoading) {
+    // You could show a loading spinner here if needed
+    return null;
+  }
+
+  return <Router />;
 }
 
 export default App;

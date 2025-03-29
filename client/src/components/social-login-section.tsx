@@ -2,8 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FaGoogle, FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { useState } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import LoginButton from "@/components/login-button";
+import LogoutButton from "@/components/logout-button";
 
 export default function SocialLoginSection() {
+  const { currentUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   
@@ -30,65 +34,82 @@ export default function SocialLoginSection() {
 
         <div className="max-w-md mx-auto">
           <div className="bg-white rounded-2xl shadow-md p-8">
-            <div className="space-y-4">
-              <button className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition">
-                <FaGoogle className="text-red-500 text-xl" />
-                <span className="font-medium">Continue with Google</span>
-              </button>
-              <button className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition">
-                <FaFacebook className="text-blue-600 text-xl" />
-                <span className="font-medium">Continue with Facebook</span>
-              </button>
-              <button className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition">
-                <FaInstagram className="text-pink-500 text-xl" />
-                <span className="font-medium">Continue with Instagram</span>
-              </button>
-              <button className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition">
-                <FaLinkedin className="text-blue-600 text-xl" />
-                <span className="font-medium">Continue with LinkedIn</span>
-              </button>
-            </div>
-            
-            <div className="flex items-center my-6">
-              <div className="flex-grow h-px bg-gray-200"></div>
-              <span className="mx-4 text-gray-500 text-sm">or</span>
-              <div className="flex-grow h-px bg-gray-200"></div>
-            </div>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <Input 
-                    type="email" 
-                    id="email" 
-                    className="w-full px-4 py-3 rounded-lg"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+            {currentUser ? (
+              <div className="space-y-6 text-center">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <img 
+                    src={currentUser.photoURL || "https://via.placeholder.com/100"} 
+                    alt="Profile" 
+                    className="w-20 h-20 rounded-full mx-auto mb-4"
                   />
+                  <h3 className="font-bold text-lg">{currentUser.displayName || "User"}</h3>
+                  <p className="text-gray-500 text-sm">{currentUser.email}</p>
                 </div>
+                
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <Input 
-                    type="password" 
-                    id="password" 
-                    className="w-full px-4 py-3 rounded-lg"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
+                  <p className="text-green-600 font-medium mb-4">
+                    You're successfully signed in!
+                  </p>
+                  <LogoutButton className="w-full" />
                 </div>
-                <Button 
-                  type="submit" 
-                  className="w-full py-6 rounded-lg bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:opacity-90 transition"
-                >
-                  Sign Up with Email
-                </Button>
               </div>
-            </form>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  <LoginButton />
+                  
+                  <button className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition">
+                    <FaInstagram className="text-pink-500 text-xl" />
+                    <span className="font-medium">Continue with Instagram</span>
+                  </button>
+                  <button className="w-full py-3 px-4 rounded-lg border border-gray-300 flex items-center justify-center space-x-3 hover:bg-gray-50 transition">
+                    <FaLinkedin className="text-blue-600 text-xl" />
+                    <span className="font-medium">Continue with LinkedIn</span>
+                  </button>
+                </div>
+                
+                <div className="flex items-center my-6">
+                  <div className="flex-grow h-px bg-gray-200"></div>
+                  <span className="mx-4 text-gray-500 text-sm">or</span>
+                  <div className="flex-grow h-px bg-gray-200"></div>
+                </div>
+                
+                <form onSubmit={handleSubmit}>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <Input 
+                        type="email" 
+                        id="email" 
+                        className="w-full px-4 py-3 rounded-lg"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <Input 
+                        type="password" 
+                        id="password" 
+                        className="w-full px-4 py-3 rounded-lg"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full py-6 rounded-lg bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:opacity-90 transition"
+                    >
+                      Sign Up with Email
+                    </Button>
+                  </div>
+                </form>
+              </>
+            )}
             
             <p className="text-center text-sm text-gray-500 mt-6">
               By signing up, you agree to our <a href="#" className="text-[#0072FF] hover:underline">Terms of Service</a> and <a href="#" className="text-[#0072FF] hover:underline">Privacy Policy</a>

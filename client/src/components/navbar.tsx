@@ -1,7 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/AuthContext';
+import { signInWithGoogle, signOut } from '@/lib/firebase';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useToast } from '@/hooks/use-toast';
 
 interface NavbarProps {
   mobileMenuOpen: boolean;
@@ -9,6 +22,60 @@ interface NavbarProps {
 }
 
 export default function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProps) {
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signInWithGoogle();
+      toast({
+        title: "Success!",
+        description: "You've successfully signed in",
+      });
+    } catch (error) {
+      toast({
+        title: "Sign in failed",
+        description: "There was a problem signing in",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You've been successfully logged out",
+      });
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "There was a problem logging out",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Get user initials for avatar fallback
+  const getUserInitials = () => {
+    if (!currentUser || !currentUser.displayName) return "AC";
+    
+    return currentUser.displayName
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -30,12 +97,49 @@ export default function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProp
           </div>
           
           <div className="hidden md:flex items-center space-x-4">
-            <button className="px-4 py-2 rounded-full font-medium text-primary-500 border border-primary-500 hover:bg-primary-100 transition">
-              Log In
-            </button>
-            <button className="px-4 py-2 rounded-full font-medium text-white bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:opacity-90 transition">
-              Sign Up
-            </button>
+            {currentUser ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center space-x-2 cursor-pointer">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || "User"} />
+                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-sm">{currentUser.displayName || "User"}</span>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button 
+                  onClick={handleLogin}
+                  variant="outline"
+                  disabled={isLoading}
+                  className="rounded-full font-medium"
+                >
+                  Log In
+                </Button>
+                <Button 
+                  onClick={handleLogin}
+                  disabled={isLoading}
+                  className="rounded-full font-medium bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:opacity-90 transition"
+                >
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
           
           {/* Mobile menu button */}
@@ -63,12 +167,46 @@ export default function Navbar({ mobileMenuOpen, setMobileMenuOpen }: NavbarProp
             <a href="#testimonials" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Testimonials</a>
             <a href="#contact" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Contact</a>
             <div className="flex space-x-3 px-3 pt-4">
-              <button className="flex-1 px-4 py-2 rounded-full font-medium text-primary-500 border border-primary-500 hover:bg-primary-100 transition">
-                Log In
-              </button>
-              <button className="flex-1 px-4 py-2 rounded-full font-medium text-white bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:opacity-90 transition">
-                Sign Up
-              </button>
+              {currentUser ? (
+                <div className="w-full">
+                  <div className="flex items-center space-x-3 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || "User"} />
+                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{currentUser.displayName || "User"}</p>
+                      <p className="text-xs text-gray-500">{currentUser.email}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleLogout}
+                    variant="outline"
+                    className="w-full flex items-center justify-center space-x-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Button 
+                    onClick={handleLogin}
+                    variant="outline"
+                    disabled={isLoading}
+                    className="flex-1 rounded-full"
+                  >
+                    Log In
+                  </Button>
+                  <Button 
+                    onClick={handleLogin}
+                    disabled={isLoading}
+                    className="flex-1 rounded-full bg-gradient-to-r from-[#00C6FF] to-[#0072FF]"
+                  >
+                    Sign Up
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

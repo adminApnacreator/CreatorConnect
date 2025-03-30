@@ -1,8 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "CommonJS",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "dist/server"
   },
-  "include": ["server/**/*"]
+  "include": ["server/**/*", "api/**/*"]
 } 

@@ -11,7 +11,7 @@ import {
   type InsertConversation,
   type Message,
   type InsertMessage,
-} from "@shared/schema";
+} from "@shared/schema.js";
 
 export interface IStorage {
   // Creator methods

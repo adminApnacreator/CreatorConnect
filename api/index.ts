@@ -1,6 +1,6 @@
 import express from 'express';
-import { registerRoutes } from '../server/routes';
-import { storage } from '../server/storage';
+import { registerRoutes } from '../server/routes.js';
+import { storage } from '../server/storage.js';
 import { json, urlencoded } from 'express';
 import { createServer } from 'http';
 
@@ -30,7 +30,7 @@ registerRoutes(app)
   .catch(err => console.error('Failed to register API routes', err));
 
 // Error handler
-app.use((err: any, _req: any, res: any, _next: any) => {
+app.use((err: Error, _req: any, res: any, _next: any) => {
   console.error(err);
   res.status(500).json({
     message: 'Internal Server Error',

@@ -7,7 +7,7 @@ import {
   insertCreatorSchema,
   insertMessageSchema,
   insertConversationSchema
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { ZodError, z } from "zod";
 import { fromZodError } from "zod-validation-error";
 
